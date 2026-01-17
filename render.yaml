@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: eter-dashboard
+    runtime: node
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: GAMMA_API_KEY
+        sync: false
