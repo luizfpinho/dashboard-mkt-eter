@@ -122,6 +122,7 @@ export function deduplicarLeads(leads: LeadClassificado[]): LeadClassificado[] {
 
 /**
  * Filtra leads baseado nos critérios selecionados
+ * IMPORTANTE: Usa horário de Brasília (GMT-3) para filtros de data
  */
 export function filtrarLeads(
   leads: LeadClassificado[],
@@ -136,14 +137,15 @@ export function filtrarLeads(
 ): LeadClassificado[] {
   let resultado = [...leads];
 
-  // Filtro de data (trabalhando em UTC para compatibilidade com timestamps ISO)
+  // Filtro de data (convertendo para horário de Brasília GMT-3)
   if (filtros.dataInicio && filtros.dataFim) {
     // Quando ambas as datas estão presentes
+    // Os leads vêm em UTC, então precisamos ajustar para Brasília (GMT-3)
     const dataInicioAjustada = new Date(filtros.dataInicio);
-    dataInicioAjustada.setUTCHours(0, 0, 0, 0);
+    dataInicioAjustada.setHours(3, 0, 0, 0); // 00:00 Brasília = 03:00 UTC
 
     const dataFimAjustada = new Date(filtros.dataFim);
-    dataFimAjustada.setUTCHours(23, 59, 59, 999);
+    dataFimAjustada.setHours(26, 59, 59, 999); // 23:59 Brasília = 02:59 UTC do dia seguinte
 
     resultado = resultado.filter(lead => {
       const dataLead = lead.dataHora instanceof Date ? lead.dataHora : new Date(lead.dataHora);
@@ -152,7 +154,7 @@ export function filtrarLeads(
   } else if (filtros.dataInicio) {
     // Apenas data início
     const dataInicioAjustada = new Date(filtros.dataInicio);
-    dataInicioAjustada.setUTCHours(0, 0, 0, 0);
+    dataInicioAjustada.setHours(3, 0, 0, 0); // 00:00 Brasília = 03:00 UTC
 
     resultado = resultado.filter(lead => {
       const dataLead = lead.dataHora instanceof Date ? lead.dataHora : new Date(lead.dataHora);
@@ -161,7 +163,7 @@ export function filtrarLeads(
   } else if (filtros.dataFim) {
     // Apenas data fim
     const dataFimAjustada = new Date(filtros.dataFim);
-    dataFimAjustada.setUTCHours(23, 59, 59, 999);
+    dataFimAjustada.setHours(26, 59, 59, 999); // 23:59 Brasília = 02:59 UTC do dia seguinte
 
     resultado = resultado.filter(lead => {
       const dataLead = lead.dataHora instanceof Date ? lead.dataHora : new Date(lead.dataHora);

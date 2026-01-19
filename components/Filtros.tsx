@@ -60,9 +60,14 @@ export function Filtros({ onAplicarFiltros, onLimparFiltros }: FiltrosProps) {
   };
 
   const handlePresetData = (preset: string) => {
-    const hoje = new Date();
-    let inicio = new Date();
-    let fim = new Date();
+    // Usar horário de Brasília (GMT-3) para todos os presets
+    // Obter data atual em Brasília
+    const agoraUTC = new Date();
+    const horaBrasilia = new Date(agoraUTC.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+
+    const hoje = new Date(horaBrasilia.getFullYear(), horaBrasilia.getMonth(), horaBrasilia.getDate());
+    let inicio = new Date(hoje);
+    let fim = new Date(hoje);
 
     switch (preset) {
       case 'hoje':
