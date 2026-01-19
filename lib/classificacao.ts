@@ -79,20 +79,42 @@ export function classificarOrigem(utm: string): string {
 
 /**
  * Remove duplicatas de leads baseado no email
+ * Mantém o lead mais recente quando houver duplicatas
  */
 export function deduplicarLeads(leads: LeadClassificado[]): LeadClassificado[] {
+  if (!leads || leads.length === 0) {
+    return [];
+  }
+
   const emailsVistos = new Set<string>();
   const leadsUnicos: LeadClassificado[] = [];
+  let duplicatasRemovidas = 0;
 
   // Processar em ordem reversa para manter o lead mais recente
   for (let i = leads.length - 1; i >= 0; i--) {
     const lead = leads[i];
+
+    // Validar que o lead tem email
+    if (!lead.email || lead.email.trim() === '') {
+      console.warn('Lead sem email encontrado:', lead.nome);
+      continue;
+    }
+
     const emailNormalizado = lead.email.toLowerCase().trim();
 
     if (!emailsVistos.has(emailNormalizado)) {
       emailsVistos.add(emailNormalizado);
       leadsUnicos.unshift(lead);
+    } else {
+      duplicatasRemovidas++;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Duplicata removida: ${lead.nome} (${lead.email})`);
+      }
     }
+  }
+
+  if (duplicatasRemovidas > 0) {
+    console.log(`📊 Deduplicação: ${leads.length} leads → ${leadsUnicos.length} únicos (${duplicatasRemovidas} duplicatas removidas)`);
   }
 
   return leadsUnicos;

@@ -11,17 +11,35 @@ export function calcularMetricas(leads: LeadClassificado[]): Metricas {
   const naoQualificado = leads.filter(l => l.bu === 'Não Qualificado').length;
 
   const totalMQLs = consultoria + aceleradora;
-  const taxaQualificacao = totalLeads > 0 ? (totalMQLs / totalLeads) * 100 : 0;
+
+  // Taxa de qualificação com 2 casas decimais para consistência
+  const taxaQualificacao = totalLeads > 0 ? Number(((totalMQLs / totalLeads) * 100).toFixed(2)) : 0;
+
+  // Validação de integridade: soma das BUs deve ser igual ao total
+  const somaTotal = consultoria + aceleradora + naoQualificado;
+  if (somaTotal !== totalLeads) {
+    console.error(`❌ ERRO DE INTEGRIDADE: Soma BUs (${somaTotal}) ≠ Total Leads (${totalLeads})`);
+  }
 
   // Métricas por ICP - Consultoria
   const consultoriaICP1 = leads.filter(l => l.bu === 'Consultoria' && l.icp === 'ICP1').length;
   const consultoriaICP2 = leads.filter(l => l.bu === 'Consultoria' && l.icp === 'ICP2').length;
   const consultoriaICP3 = leads.filter(l => l.bu === 'Consultoria' && l.icp === 'ICP3').length;
 
+  // Validação: soma dos ICPs de Consultoria deve ser igual ao total de Consultoria
+  if (consultoriaICP1 + consultoriaICP2 + consultoriaICP3 !== consultoria) {
+    console.error(`❌ ERRO: Soma ICPs Consultoria ≠ Total Consultoria`);
+  }
+
   // Métricas por ICP - Aceleradora
   const aceleradoraICP1 = leads.filter(l => l.bu === 'Aceleradora' && l.icp === 'ICP1').length;
   const aceleradoraICP2 = leads.filter(l => l.bu === 'Aceleradora' && l.icp === 'ICP2').length;
   const aceleradoraICP3 = leads.filter(l => l.bu === 'Aceleradora' && l.icp === 'ICP3').length;
+
+  // Validação: soma dos ICPs de Aceleradora deve ser igual ao total de Aceleradora
+  if (aceleradoraICP1 + aceleradoraICP2 + aceleradoraICP3 !== aceleradora) {
+    console.error(`❌ ERRO: Soma ICPs Aceleradora ≠ Total Aceleradora`);
+  }
 
   return {
     totalLeads,
