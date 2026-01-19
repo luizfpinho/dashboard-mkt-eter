@@ -105,3 +105,23 @@ export function formatarDataHoraBrasil(data: Date): string {
   const minuto = String(dataBrasilia.getMinutes()).padStart(2, '0');
   return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
 }
+
+/**
+ * Retorna informações sobre o mês atual em Brasília
+ * Útil para cálculos de metas mensais e acompanhamento
+ */
+export function getMesAtualBrasilia(): {
+  mes: number;        // 1-12
+  ano: number;
+  diasNoMes: number;
+  diaAtual: number;
+} {
+  const agora = getDataHoraBrasilia();
+
+  return {
+    mes: agora.getMonth() + 1,
+    ano: agora.getFullYear(),
+    diasNoMes: new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate(),
+    diaAtual: agora.getDate()
+  };
+}

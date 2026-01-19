@@ -22,7 +22,8 @@ import { TabelaConsolidada } from '@/components/TabelaConsolidada';
 import { Graficos } from '@/components/Graficos';
 import { MatrizCruzada } from '@/components/MatrizCruzada';
 import { TabelaLeads } from '@/components/TabelaLeads';
-import { Alertas } from '@/components/Alertas';
+import AcompanhamentoMetas from '@/components/AcompanhamentoMetas';
+import { getMesAtualBrasilia } from '@/lib/timezone';
 import { ComparativoSemanal } from '@/components/ComparativoSemanal';
 import GeradorRelatorio from '@/components/GeradorRelatorio';
 import GammaPresentationGenerator from '@/components/GammaPresentationGenerator';
@@ -278,8 +279,11 @@ export default function Dashboard() {
             {/* Cards de Resumo */}
             <CardsResumo metricas={metricas} />
 
-            {/* Alertas */}
-            <Alertas metricas={metricas} metas={metas} />
+            {/* Acompanhamento de Metas Mensais */}
+            <AcompanhamentoMetas
+              metricas={metricas}
+              mesAtual={getMesAtualBrasilia()}
+            />
 
             {/* Layout em Grid - Tabelas + Gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
