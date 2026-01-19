@@ -131,10 +131,35 @@ export default function Dashboard() {
   const metricas = calcularMetricas(leadsFiltrados);
 
   // IMPORTANTE: Métricas de META sempre consideram o MÊS INTEIRO
-  // independente de filtros de semana, canal, BU, ICP, etc.
+  // independente de TODOS os filtros (semana, data, canal, BU, ICP)
   const mesAtualInfo = getMesAtualBrasilia();
+
+  // Sempre calcular baseado no mês atual, nunca nos filtros
   const leadsDoMesInteiro = filtrarLeadsPorMes(leadsOriginais, mesAtualInfo.mes, mesAtualInfo.ano);
   const metricasParaMetas = calcularMetricas(leadsDoMesInteiro);
+
+  // Calcular contribuição do período filtrado (se houver filtro de data/semana)
+  const temFiltroTemporal = filtrosAtivos.dataInicio || filtrosAtivos.dataFim || filtrosAtivos.semana;
+  const metricasFiltradas = temFiltroTemporal ? metricas : null;
+
+  // Gerar label do período filtrado
+  const getPeriodoFiltradoLabel = (): string | null => {
+    if (!temFiltroTemporal) return null;
+
+    if (filtrosAtivos.semana) {
+      return `Semana ${filtrosAtivos.semana}`;
+    }
+
+    if (filtrosAtivos.dataInicio && filtrosAtivos.dataFim) {
+      const inicio = filtrosAtivos.dataInicio.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const fim = filtrosAtivos.dataFim.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      return `${inicio} a ${fim}`;
+    }
+
+    return 'Período filtrado';
+  };
+
+  const periodoFiltradoLabel = getPeriodoFiltradoLabel();
 
   // Preparar dados para gráficos
   const evolucao = calcularEvolucaoTemporal(leadsFiltrados);
@@ -304,6 +329,8 @@ export default function Dashboard() {
             <AcompanhamentoMetas
               metricas={metricasParaMetas}
               mesAtual={mesAtualInfo}
+              metricasFiltradas={metricasFiltradas}
+              periodoFiltrado={periodoFiltradoLabel}
             />
 
             {/* Layout em Grid - Tabelas + Gráficos */}

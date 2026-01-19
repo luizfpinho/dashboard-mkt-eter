@@ -14,11 +14,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Circle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface AcompanhamentoMetasProps {
-  metricas: Metricas;
+  metricas: Metricas; // Métricas do mês inteiro
   mesAtual: InfoMes;
+  metricasFiltradas?: Metricas | null; // Métricas do período filtrado (se houver filtro temporal)
+  periodoFiltrado?: string | null; // Label do período filtrado
 }
 
-export default function AcompanhamentoMetas({ metricas, mesAtual }: AcompanhamentoMetasProps) {
+export default function AcompanhamentoMetas({ metricas, mesAtual, metricasFiltradas, periodoFiltrado }: AcompanhamentoMetasProps) {
   // Calcular status para cada BU
   const metaConsultoria = METAS_MENSAIS.find(m => m.bu === 'Consultoria')!;
   const metaAceleradora = METAS_MENSAIS.find(m => m.bu === 'Aceleradora')!;
@@ -115,6 +117,19 @@ export default function AcompanhamentoMetas({ metricas, mesAtual }: Acompanhamen
               )}
             </div>
           </div>
+
+          {/* Contribuição do período filtrado */}
+          {metricasFiltradas && periodoFiltrado && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-medium">📌 Contribuição ({periodoFiltrado}):</span>{' '}
+                {metricasFiltradas.consultoria} MQLs{' '}
+                <span className="text-blue-600">
+                  ({((metricasFiltradas.consultoria / metaConsultoria.metaBase) * 100).toFixed(1)}% da meta mensal)
+                </span>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Aceleradora */}
@@ -184,6 +199,19 @@ export default function AcompanhamentoMetas({ metricas, mesAtual }: Acompanhamen
               )}
             </div>
           </div>
+
+          {/* Contribuição do período filtrado */}
+          {metricasFiltradas && periodoFiltrado && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-medium">📌 Contribuição ({periodoFiltrado}):</span>{' '}
+                {metricasFiltradas.aceleradora} MQLs{' '}
+                <span className="text-blue-600">
+                  ({((metricasFiltradas.aceleradora / metaAceleradora.metaBase) * 100).toFixed(1)}% da meta mensal)
+                </span>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Indicador de Ritmo Geral */}
