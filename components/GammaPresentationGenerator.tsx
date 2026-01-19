@@ -87,6 +87,16 @@ export default function GammaPresentationGenerator({ dashboardData, todosLeads }
     if (!dashboardData.porCanal['Tráfego Pago']) alertas.push('Tráfego pago zerado');
     if (dashboardData.totalConsultoria < 5) alertas.push('Volume baixo de Consultoria');
 
+    // Calcular atingimento de metas (metas mensais: Consultoria 100 MQLs, Aceleradora 200 MQLs)
+    const metaConsultoria = 100;
+    const metaAceleradora = 200;
+    const percConsultoria = ((dashboardData.totalConsultoria / metaConsultoria) * 100).toFixed(1);
+    const percAceleradora = ((dashboardData.totalAceleradora / metaAceleradora) * 100).toFixed(1);
+    const statusConsultoria = dashboardData.totalConsultoria >= metaConsultoria ? '✅ META ATINGIDA' :
+      dashboardData.totalConsultoria >= metaConsultoria * 0.9 ? '⚠️ PRÓXIMO DA META' : '🔴 ABAIXO DA META';
+    const statusAceleradora = dashboardData.totalAceleradora >= metaAceleradora ? '✅ META ATINGIDA' :
+      dashboardData.totalAceleradora >= metaAceleradora * 0.9 ? '⚠️ PRÓXIMO DA META' : '🔴 ABAIXO DA META';
+
     return `
 Crie uma apresentação profissional de relatório de marketing para a ETER Company.
 
@@ -100,15 +110,21 @@ Crie uma apresentação profissional de relatório de marketing para a ETER Comp
 - Taxa de Qualificação: ${dashboardData.taxaQualificacao.toFixed(1)}%
 - Não Qualificados: ${dashboardData.totalNaoQualificado}
 
-## CONSULTORIA (${dashboardData.totalConsultoria} MQLs)
-Empresas com faturamento >= R$ 100k/mês
+## ACOMPANHAMENTO DE METAS MENSAIS
+
+### CONSULTORIA (Meta: ${metaConsultoria} MQLs/mês | Peso: 60%)
+- **Realizado:** ${dashboardData.totalConsultoria} MQLs (${percConsultoria}% da meta)
+- **Status:** ${statusConsultoria}
+- Empresas com faturamento >= R$ 100k/mês
 - ICP 1 (100-500k/mês): ${dashboardData.consultoriaICP1} leads
 - ICP 2 (500k-1MM/mês): ${dashboardData.consultoriaICP2} leads
 - ICP 3 (+1MM/mês): ${dashboardData.consultoriaICP3} leads
 - Taxa: ${dashboardData.taxaConsultoria.toFixed(1)}%
 
-## ACELERADORA (${dashboardData.totalAceleradora} MQLs)
-Empresas com faturamento R$ 10k-100k/mês
+### ACELERADORA (Meta: ${metaAceleradora} MQLs/mês | Peso: 40%)
+- **Realizado:** ${dashboardData.totalAceleradora} MQLs (${percAceleradora}% da meta)
+- **Status:** ${statusAceleradora}
+- Empresas com faturamento R$ 10k-100k/mês
 - ICP 1 (10-30k/mês): ${dashboardData.aceleradoraICP1} leads
 - ICP 2 (30-60k/mês): ${dashboardData.aceleradoraICP2} leads
 - ICP 3 (60-100k/mês): ${dashboardData.aceleradoraICP3} leads
@@ -121,9 +137,12 @@ ${alertas.length > 0 ? `## ALERTAS\n${alertas.join('\n')}` : ''}
 
 # ESTRUTURA SUGERIDA
 - Slide 1: Capa com título e período
-- Slide 2: Resumo executivo com cards de números principais
-- Slides seguintes: Detalhamento por BU, canais e insights
-- Slide final: Resumo rápido com 3 números principais
+- Slide 2: Resumo executivo com cards de números principais E STATUS DAS METAS (incluir % de atingimento)
+- Slides seguintes: Detalhamento por BU com barras de progresso mostrando meta vs realizado
+- Análise de canais e insights
+- Slide final: Resumo com atingimento de metas e 3 números principais
+
+IMPORTANTE: Incluir em TODOS os slides relevantes a informação de quanto foi atingido em relação às metas mensais.
     `.trim();
   };
 

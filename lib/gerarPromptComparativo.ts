@@ -41,6 +41,14 @@ export function gerarPromptComparativo(dados: DadosComparativos): string {
     pontosAtencao.push(`Taxa de qualificação crítica: ${atual.taxaQualificacao.toFixed(1)}%`);
   }
 
+  // Calcular atingimento de metas (metas mensais)
+  const metaConsultoria = 100;
+  const metaAceleradora = 200;
+  const percConsultoriaAtual = ((atual.totalConsultoria / metaConsultoria) * 100).toFixed(1);
+  const percAceleradoraAtual = ((atual.totalAceleradora / metaAceleradora) * 100).toFixed(1);
+  const percConsultoriaAnterior = ((anterior.totalConsultoria / metaConsultoria) * 100).toFixed(1);
+  const percAceleradoraAnterior = ((anterior.totalAceleradora / metaAceleradora) * 100).toFixed(1);
+
   return `
 Crie uma apresentação COMPARATIVA de relatório de marketing para a ETER Company.
 
@@ -63,26 +71,28 @@ Crie uma apresentação COMPARATIVA de relatório de marketing para a ETER Compa
 
 ---
 
-# CONSULTORIA — COMPARATIVO
+# ACOMPANHAMENTO DE METAS MENSAIS — COMPARATIVO
+
+## CONSULTORIA (Meta: ${metaConsultoria} MQLs/mês | Peso: 60%)
 
 **Empresas com faturamento >= R$ 100k/mês**
 
 | Métrica | Anterior | Atual | Variação |
 |---------|----------|-------|----------|
-| Total Consultoria | ${anterior.totalConsultoria} | ${atual.totalConsultoria} | ${formatarVariacao(variacoes.totalConsultoria)} |
+| Total Consultoria | ${anterior.totalConsultoria} (${percConsultoriaAnterior}% da meta) | ${atual.totalConsultoria} (${percConsultoriaAtual}% da meta) | ${formatarVariacao(variacoes.totalConsultoria)} |
 | ICP 1 (100-500k) | ${anterior.consultoriaICP1} | ${atual.consultoriaICP1} | ${atual.consultoriaICP1 - anterior.consultoriaICP1 >= 0 ? '+' : ''}${atual.consultoriaICP1 - anterior.consultoriaICP1} |
 | ICP 2 (500k-1MM) | ${anterior.consultoriaICP2} | ${atual.consultoriaICP2} | ${atual.consultoriaICP2 - anterior.consultoriaICP2 >= 0 ? '+' : ''}${atual.consultoriaICP2 - anterior.consultoriaICP2} |
 | ICP 3 (+1MM) | ${anterior.consultoriaICP3} | ${atual.consultoriaICP3} | ${atual.consultoriaICP3 - anterior.consultoriaICP3 >= 0 ? '+' : ''}${atual.consultoriaICP3 - anterior.consultoriaICP3} |
 
 ---
 
-# ACELERADORA — COMPARATIVO
+## ACELERADORA (Meta: ${metaAceleradora} MQLs/mês | Peso: 40%)
 
 **Empresas com faturamento R$ 10k-100k/mês**
 
 | Métrica | Anterior | Atual | Variação |
 |---------|----------|-------|----------|
-| Total Aceleradora | ${anterior.totalAceleradora} | ${atual.totalAceleradora} | ${formatarVariacao(variacoes.totalAceleradora)} |
+| Total Aceleradora | ${anterior.totalAceleradora} (${percAceleradoraAnterior}% da meta) | ${atual.totalAceleradora} (${percAceleradoraAtual}% da meta) | ${formatarVariacao(variacoes.totalAceleradora)} |
 | ICP 1 (10-30k) | ${anterior.aceleradoraICP1} | ${atual.aceleradoraICP1} | ${atual.aceleradoraICP1 - anterior.aceleradoraICP1 >= 0 ? '+' : ''}${atual.aceleradoraICP1 - anterior.aceleradoraICP1} |
 | ICP 2 (30-60k) | ${anterior.aceleradoraICP2} | ${atual.aceleradoraICP2} | ${atual.aceleradoraICP2 - anterior.aceleradoraICP2 >= 0 ? '+' : ''}${atual.aceleradoraICP2 - anterior.aceleradoraICP2} |
 | ICP 3 (60-100k) | ${anterior.aceleradoraICP3} | ${atual.aceleradoraICP3} | ${atual.aceleradoraICP3 - anterior.aceleradoraICP3 >= 0 ? '+' : ''}${atual.aceleradoraICP3 - anterior.aceleradoraICP3} |
@@ -110,21 +120,25 @@ ${pontosAtencao.length > 0 ? pontosAtencao.map(p => `- ${p}`).join('\n') : '- Ne
 A apresentação deve ter a seguinte estrutura:
 
 1. **CAPA** - Título "Relatório Comparativo de MQLs - ETER Company" + Períodos
-2. **RESUMO EXECUTIVO** - Cards grandes com números principais e variações (usar setas verdes/vermelhas)
+2. **RESUMO EXECUTIVO** - Cards grandes com números principais e variações (usar setas verdes/vermelhas) + STATUS DE METAS
 3. **EVOLUÇÃO VISUAL** - Gráfico de barras lado a lado comparando os dois períodos
-4. **CONSULTORIA** - Detalhamento com variações e gráfico comparativo
-5. **ACELERADORA** - Detalhamento com variações e gráfico comparativo
-6. **CANAIS** - Comparativo de canais com barras empilhadas
-7. **DESTAQUES** - Slide com ícones destacando conquistas e alertas
-8. **CONCLUSÃO** - 3 números mais importantes + recomendações
+4. **CONSULTORIA** - Detalhamento com variações, gráfico comparativo E BARRAS DE PROGRESSO MOSTRANDO META (100 MQLs)
+5. **ACELERADORA** - Detalhamento com variações, gráfico comparativo E BARRAS DE PROGRESSO MOSTRANDO META (200 MQLs)
+6. **ATINGIMENTO DE METAS** - Slide dedicado comparando % de atingimento anterior vs atual para cada BU
+7. **CANAIS** - Comparativo de canais com barras empilhadas
+8. **DESTAQUES** - Slide com ícones destacando conquistas e alertas
+9. **CONCLUSÃO** - 3 números mais importantes + atingimento de metas + recomendações
 
 ## INSTRUÇÕES DE DESIGN
 
 - Usar cores: 🟢 Verde (#22c55e) para variações positivas, 🔴 Vermelho (#ef4444) para negativas
 - Incluir setas (↑ ↓) nos números comparativos
 - Gráficos de barras lado a lado para comparação visual
+- IMPORTANTE: Incluir barras de progresso mostrando meta vs realizado em AMBOS os períodos
 - Números grandes e destacados
 - Tom profissional e executivo
 - Idioma: Português brasileiro
+
+CRÍTICO: Incluir em TODOS os slides relevantes a informação de quanto foi atingido em relação às metas mensais (Consultoria: 100 MQLs/mês, Aceleradora: 200 MQLs/mês).
   `.trim();
 }

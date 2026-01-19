@@ -207,3 +207,28 @@ export function filtrarLeads(
 
   return resultado;
 }
+
+/**
+ * Filtra leads para um mês específico usando o fuso horário de Brasília
+ * Usado para filtro automático do mês atual quando não há filtros manuais
+ */
+export function filtrarLeadsPorMes(
+  leads: LeadClassificado[],
+  mes: number,
+  ano: number
+): LeadClassificado[] {
+  return leads.filter(lead => {
+    const dataLead = lead.dataHora instanceof Date ? lead.dataHora : new Date(lead.dataHora);
+
+    // Converter para string no formato de Brasília e extrair mês/ano
+    const dataBrasiliaStr = dataLead.toLocaleString('en-US', {
+      timeZone: 'America/Sao_Paulo'
+    });
+    const dataBrasilia = new Date(dataBrasiliaStr);
+
+    const mesLead = dataBrasilia.getMonth() + 1; // getMonth() retorna 0-11
+    const anoLead = dataBrasilia.getFullYear();
+
+    return mesLead === mes && anoLead === ano;
+  });
+}

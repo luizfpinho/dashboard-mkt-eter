@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Lead, LeadClassificado, Filtros as FiltrosType, Metas } from '@/types/lead';
-import { classificarLead, deduplicarLeads, filtrarLeads } from '@/lib/classificacao';
+import { classificarLead, deduplicarLeads, filtrarLeads, filtrarLeadsPorMes } from '@/lib/classificacao';
 import {
   calcularMetricas,
   calcularDistribuicaoPorCanal,
@@ -68,7 +68,7 @@ export default function Dashboard() {
       setLeadsOriginais(leadsUnicos);
 
       // IMPORTANTE: Reaplicar filtros existentes aos novos dados
-      // Se há filtros ativos, aplicá-los; senão, mostrar todos
+      // Se há filtros ativos, aplicá-los; senão, filtrar automaticamente pelo mês atual
       if (
         filtrosAtivos.dataInicio ||
         filtrosAtivos.dataFim ||
@@ -80,7 +80,11 @@ export default function Dashboard() {
         setLeadsFiltrados(leadsFiltradosNovos);
         console.log('🔄 Dados atualizados - Filtros reaplicados');
       } else {
-        setLeadsFiltrados(leadsUnicos);
+        // Sem filtros manuais: aplicar filtro automático do mês atual
+        const mesAtual = getMesAtualBrasilia();
+        const leadsDoMesAtual = filtrarLeadsPorMes(leadsUnicos, mesAtual.mes, mesAtual.ano);
+        setLeadsFiltrados(leadsDoMesAtual);
+        console.log(`📅 Filtro automático: ${mesAtual.mes}/${mesAtual.ano} (${leadsDoMesAtual.length} leads)`);
       }
 
       setUltimaAtualizacao(new Date());
@@ -116,7 +120,11 @@ export default function Dashboard() {
       icps: [],
       semana: null
     });
-    setLeadsFiltrados(leadsOriginais);
+    // Ao limpar filtros, aplicar filtro automático do mês atual
+    const mesAtual = getMesAtualBrasilia();
+    const leadsDoMesAtual = filtrarLeadsPorMes(leadsOriginais, mesAtual.mes, mesAtual.ano);
+    setLeadsFiltrados(leadsDoMesAtual);
+    console.log(`📅 Filtros limpos - Aplicado filtro automático: ${mesAtual.mes}/${mesAtual.ano}`);
   };
 
   // Calcular métricas
