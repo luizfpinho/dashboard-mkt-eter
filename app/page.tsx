@@ -65,7 +65,23 @@ export default function Dashboard() {
       const leadsUnicos = deduplicarLeads(leadsClassificados);
 
       setLeadsOriginais(leadsUnicos);
-      setLeadsFiltrados(leadsUnicos);
+
+      // IMPORTANTE: Reaplicar filtros existentes aos novos dados
+      // Se há filtros ativos, aplicá-los; senão, mostrar todos
+      if (
+        filtrosAtivos.dataInicio ||
+        filtrosAtivos.dataFim ||
+        (filtrosAtivos.origens && filtrosAtivos.origens.length > 0) ||
+        (filtrosAtivos.bus && filtrosAtivos.bus.length > 0) ||
+        (filtrosAtivos.icps && filtrosAtivos.icps.length > 0)
+      ) {
+        const leadsFiltradosNovos = filtrarLeads(leadsUnicos, filtrosAtivos);
+        setLeadsFiltrados(leadsFiltradosNovos);
+        console.log('🔄 Dados atualizados - Filtros reaplicados');
+      } else {
+        setLeadsFiltrados(leadsUnicos);
+      }
+
       setUltimaAtualizacao(new Date());
     } catch (error) {
       console.error('Erro ao buscar leads:', error);
