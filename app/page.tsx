@@ -127,8 +127,14 @@ export default function Dashboard() {
     console.log(`📅 Filtros limpos - Aplicado filtro automático: ${mesAtual.mes}/${mesAtual.ano}`);
   };
 
-  // Calcular métricas
+  // Calcular métricas dos leads filtrados (para cards, gráficos, etc.)
   const metricas = calcularMetricas(leadsFiltrados);
+
+  // IMPORTANTE: Métricas de META sempre consideram o MÊS INTEIRO
+  // independente de filtros de semana, canal, BU, ICP, etc.
+  const mesAtualInfo = getMesAtualBrasilia();
+  const leadsDoMesInteiro = filtrarLeadsPorMes(leadsOriginais, mesAtualInfo.mes, mesAtualInfo.ano);
+  const metricasParaMetas = calcularMetricas(leadsDoMesInteiro);
 
   // Preparar dados para gráficos
   const evolucao = calcularEvolucaoTemporal(leadsFiltrados);
@@ -188,6 +194,7 @@ export default function Dashboard() {
   };
 
   const dashboardDataForGamma = {
+    // Dados do período filtrado (para análise semanal, etc.)
     totalLeads: leadsFiltrados.length,
     totalMQLs: metricas.totalMQLs,
     totalConsultoria: metricas.consultoria,
@@ -206,6 +213,12 @@ export default function Dashboard() {
     periodoLabel: getPeriodoLabel(),
     dataInicio: filtrosAtivos.dataInicio || new Date(0),
     dataFim: filtrosAtivos.dataFim || new Date(),
+    // Dados do MÊS INTEIRO para cálculo de metas (independente de filtros)
+    metaMesInteiro: {
+      totalConsultoria: metricasParaMetas.consultoria,
+      totalAceleradora: metricasParaMetas.aceleradora,
+      totalMQLs: metricasParaMetas.totalMQLs,
+    },
   };
 
   return (
@@ -289,8 +302,8 @@ export default function Dashboard() {
 
             {/* Acompanhamento de Metas Mensais */}
             <AcompanhamentoMetas
-              metricas={metricas}
-              mesAtual={getMesAtualBrasilia()}
+              metricas={metricasParaMetas}
+              mesAtual={mesAtualInfo}
             />
 
             {/* Layout em Grid - Tabelas + Gráficos */}

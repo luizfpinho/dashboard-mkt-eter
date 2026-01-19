@@ -32,6 +32,11 @@ interface DashboardData {
   periodoLabel: string;
   dataInicio: Date;
   dataFim: Date;
+  metaMesInteiro?: {
+    totalConsultoria: number;
+    totalAceleradora: number;
+    totalMQLs: number;
+  };
 }
 
 interface GammaPresentationGeneratorProps {
@@ -87,15 +92,20 @@ export default function GammaPresentationGenerator({ dashboardData, todosLeads }
     if (!dashboardData.porCanal['Tráfego Pago']) alertas.push('Tráfego pago zerado');
     if (dashboardData.totalConsultoria < 5) alertas.push('Volume baixo de Consultoria');
 
-    // Calcular atingimento de metas (metas mensais: Consultoria 100 MQLs, Aceleradora 200 MQLs)
+    // Calcular atingimento de metas usando dados do MÊS INTEIRO (não apenas do período filtrado)
     const metaConsultoria = 100;
     const metaAceleradora = 200;
-    const percConsultoria = ((dashboardData.totalConsultoria / metaConsultoria) * 100).toFixed(1);
-    const percAceleradora = ((dashboardData.totalAceleradora / metaAceleradora) * 100).toFixed(1);
-    const statusConsultoria = dashboardData.totalConsultoria >= metaConsultoria ? '✅ META ATINGIDA' :
-      dashboardData.totalConsultoria >= metaConsultoria * 0.9 ? '⚠️ PRÓXIMO DA META' : '🔴 ABAIXO DA META';
-    const statusAceleradora = dashboardData.totalAceleradora >= metaAceleradora ? '✅ META ATINGIDA' :
-      dashboardData.totalAceleradora >= metaAceleradora * 0.9 ? '⚠️ PRÓXIMO DA META' : '🔴 ABAIXO DA META';
+
+    // Usar dados do mês inteiro se disponível, senão usar dados filtrados (fallback)
+    const consultoriaParaMeta = dashboardData.metaMesInteiro?.totalConsultoria ?? dashboardData.totalConsultoria;
+    const aceleradoraParaMeta = dashboardData.metaMesInteiro?.totalAceleradora ?? dashboardData.totalAceleradora;
+
+    const percConsultoria = ((consultoriaParaMeta / metaConsultoria) * 100).toFixed(1);
+    const percAceleradora = ((aceleradoraParaMeta / metaAceleradora) * 100).toFixed(1);
+    const statusConsultoria = consultoriaParaMeta >= metaConsultoria ? '✅ META ATINGIDA' :
+      consultoriaParaMeta >= metaConsultoria * 0.9 ? '⚠️ PRÓXIMO DA META' : '🔴 ABAIXO DA META';
+    const statusAceleradora = aceleradoraParaMeta >= metaAceleradora ? '✅ META ATINGIDA' :
+      aceleradoraParaMeta >= metaAceleradora * 0.9 ? '⚠️ PRÓXIMO DA META' : '🔴 ABAIXO DA META';
 
     return `
 Crie uma apresentação profissional de relatório de marketing para a ETER Company.
@@ -110,11 +120,12 @@ Crie uma apresentação profissional de relatório de marketing para a ETER Comp
 - Taxa de Qualificação: ${dashboardData.taxaQualificacao.toFixed(1)}%
 - Não Qualificados: ${dashboardData.totalNaoQualificado}
 
-## ACOMPANHAMENTO DE METAS MENSAIS
+## ACOMPANHAMENTO DE METAS MENSAIS (MÊS INTEIRO)
 
 ### CONSULTORIA (Meta: ${metaConsultoria} MQLs/mês | Peso: 60%)
-- **Realizado:** ${dashboardData.totalConsultoria} MQLs (${percConsultoria}% da meta)
+- **Realizado no Mês:** ${consultoriaParaMeta} MQLs (${percConsultoria}% da meta)
 - **Status:** ${statusConsultoria}
+- **No período filtrado (${dashboardData.periodoLabel}):** ${dashboardData.totalConsultoria} MQLs
 - Empresas com faturamento >= R$ 100k/mês
 - ICP 1 (100-500k/mês): ${dashboardData.consultoriaICP1} leads
 - ICP 2 (500k-1MM/mês): ${dashboardData.consultoriaICP2} leads
@@ -122,8 +133,9 @@ Crie uma apresentação profissional de relatório de marketing para a ETER Comp
 - Taxa: ${dashboardData.taxaConsultoria.toFixed(1)}%
 
 ### ACELERADORA (Meta: ${metaAceleradora} MQLs/mês | Peso: 40%)
-- **Realizado:** ${dashboardData.totalAceleradora} MQLs (${percAceleradora}% da meta)
+- **Realizado no Mês:** ${aceleradoraParaMeta} MQLs (${percAceleradora}% da meta)
 - **Status:** ${statusAceleradora}
+- **No período filtrado (${dashboardData.periodoLabel}):** ${dashboardData.totalAceleradora} MQLs
 - Empresas com faturamento R$ 10k-100k/mês
 - ICP 1 (10-30k/mês): ${dashboardData.aceleradoraICP1} leads
 - ICP 2 (30-60k/mês): ${dashboardData.aceleradoraICP2} leads
