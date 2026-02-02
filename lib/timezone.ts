@@ -125,3 +125,30 @@ export function getMesAtualBrasilia(): {
     diaAtual: agora.getDate()
   };
 }
+
+/**
+ * Extrai informações do mês de uma data específica
+ * Usado para calcular metas quando há filtro de mês ativo
+ *
+ * Se a data for de um mês passado ou futuro, considera o mês "completo" (último dia)
+ * Se for o mês atual, usa o dia de hoje
+ */
+export function getInfoMesDaData(data: Date): {
+  mes: number;        // 1-12
+  ano: number;
+  diasNoMes: number;
+  diaAtual: number;
+} {
+  const ano = data.getFullYear();
+  const mes = data.getMonth() + 1;
+  const diasNoMes = new Date(ano, data.getMonth() + 1, 0).getDate();
+
+  // Verificar se é o mês atual em Brasília
+  const hoje = getDataHoraBrasilia();
+  const ehMesAtual = hoje.getMonth() + 1 === mes && hoje.getFullYear() === ano;
+
+  // Se for mês atual, usa dia de hoje; senão, considera mês completo (último dia)
+  const diaAtual = ehMesAtual ? hoje.getDate() : diasNoMes;
+
+  return { mes, ano, diasNoMes, diaAtual };
+}

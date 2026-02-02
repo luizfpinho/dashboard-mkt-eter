@@ -23,7 +23,7 @@ import { Graficos } from '@/components/Graficos';
 import { MatrizCruzada } from '@/components/MatrizCruzada';
 import { TabelaLeads } from '@/components/TabelaLeads';
 import AcompanhamentoMetas from '@/components/AcompanhamentoMetas';
-import { getMesAtualBrasilia } from '@/lib/timezone';
+import { getMesAtualBrasilia, getInfoMesDaData } from '@/lib/timezone';
 import { ComparativoSemanal } from '@/components/ComparativoSemanal';
 import GeradorRelatorio from '@/components/GeradorRelatorio';
 import GammaPresentationGenerator from '@/components/GammaPresentationGenerator';
@@ -130,12 +130,17 @@ export default function Dashboard() {
   // Calcular métricas dos leads filtrados (para cards, gráficos, etc.)
   const metricas = calcularMetricas(leadsFiltrados);
 
-  // IMPORTANTE: Métricas de META sempre consideram o MÊS INTEIRO
-  // independente de TODOS os filtros (semana, data, canal, BU, ICP)
-  const mesAtualInfo = getMesAtualBrasilia();
+  // IMPORTANTE: Métricas de META seguem o MÊS DO FILTRO (se houver) ou mês atual
+  // Detectar se há filtro de mês ativo (via FiltroMesAno)
+  const temFiltroMes = filtrosAtivos.dataInicio && filtrosAtivos.dataFim;
 
-  // Sempre calcular baseado no mês atual, nunca nos filtros
-  const leadsDoMesInteiro = filtrarLeadsPorMes(leadsOriginais, mesAtualInfo.mes, mesAtualInfo.ano);
+  // Se há filtro de mês, usar o mês do filtro; senão, usar mês atual
+  const mesParaMetas = temFiltroMes
+    ? getInfoMesDaData(filtrosAtivos.dataInicio!)
+    : getMesAtualBrasilia();
+
+  // Filtrar leads do mês correto (do filtro ou atual)
+  const leadsDoMesInteiro = filtrarLeadsPorMes(leadsOriginais, mesParaMetas.mes, mesParaMetas.ano);
   const metricasParaMetas = calcularMetricas(leadsDoMesInteiro);
 
   // Calcular contribuição do período filtrado (se houver filtro de data/semana)
@@ -328,7 +333,7 @@ export default function Dashboard() {
             {/* Acompanhamento de Metas Mensais */}
             <AcompanhamentoMetas
               metricas={metricasParaMetas}
-              mesAtual={mesAtualInfo}
+              mesAtual={mesParaMetas}
               metricasFiltradas={metricasFiltradas}
               periodoFiltrado={periodoFiltradoLabel}
             />
