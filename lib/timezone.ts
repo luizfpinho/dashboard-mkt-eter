@@ -139,9 +139,16 @@ export function getInfoMesDaData(data: Date): {
   diasNoMes: number;
   diaAtual: number;
 } {
-  const ano = data.getFullYear();
-  const mes = data.getMonth() + 1;
-  const diasNoMes = new Date(ano, data.getMonth() + 1, 0).getDate();
+  // ✅ Converter para timezone de Brasília ANTES de extrair mês/ano
+  // Isso evita bugs quando a data em UTC cai em mês diferente
+  const dataBrasiliaStr = data.toLocaleString('en-US', {
+    timeZone: 'America/Sao_Paulo'
+  });
+  const dataBrasilia = new Date(dataBrasiliaStr);
+
+  const ano = dataBrasilia.getFullYear();
+  const mes = dataBrasilia.getMonth() + 1;
+  const diasNoMes = new Date(ano, dataBrasilia.getMonth() + 1, 0).getDate();
 
   // Verificar se é o mês atual em Brasília
   const hoje = getDataHoraBrasilia();
