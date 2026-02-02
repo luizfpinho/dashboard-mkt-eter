@@ -48,6 +48,21 @@ export default function Dashboard() {
     total: 57
   };
 
+  /**
+   * Verifica se há QUALQUER filtro ativo
+   * Inclui: data, semana, origem, BU, ICP
+   */
+  const temFiltrosAtivos = (): boolean => {
+    return !!(
+      filtrosAtivos.dataInicio ||
+      filtrosAtivos.dataFim ||
+      filtrosAtivos.semana ||
+      (filtrosAtivos.origens && filtrosAtivos.origens.length > 0) ||
+      (filtrosAtivos.bus && filtrosAtivos.bus.length > 0) ||
+      (filtrosAtivos.icps && filtrosAtivos.icps.length > 0)
+    );
+  };
+
   // Buscar dados da planilha
   const buscarDados = async () => {
     setCarregando(true);
@@ -69,18 +84,13 @@ export default function Dashboard() {
 
       // IMPORTANTE: Reaplicar filtros existentes aos novos dados
       // Se há filtros ativos, aplicá-los; senão, filtrar automaticamente pelo mês atual
-      if (
-        filtrosAtivos.dataInicio ||
-        filtrosAtivos.dataFim ||
-        (filtrosAtivos.origens && filtrosAtivos.origens.length > 0) ||
-        (filtrosAtivos.bus && filtrosAtivos.bus.length > 0) ||
-        (filtrosAtivos.icps && filtrosAtivos.icps.length > 0)
-      ) {
+      if (temFiltrosAtivos()) {
+        // ✅ Reaplica TODOS os filtros ativos (incluindo semana)
         const leadsFiltradosNovos = filtrarLeads(leadsUnicos, filtrosAtivos);
         setLeadsFiltrados(leadsFiltradosNovos);
-        console.log('🔄 Dados atualizados - Filtros reaplicados');
+        console.log('🔄 Dados atualizados - Filtros preservados');
       } else {
-        // Sem filtros manuais: aplicar filtro automático do mês atual
+        // ✅ Só volta para mês atual se NÃO houver filtros
         const mesAtual = getMesAtualBrasilia();
         const leadsDoMesAtual = filtrarLeadsPorMes(leadsUnicos, mesAtual.mes, mesAtual.ano);
         setLeadsFiltrados(leadsDoMesAtual);
