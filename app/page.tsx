@@ -140,18 +140,15 @@ export default function Dashboard() {
   // Calcular métricas dos leads filtrados (para cards, gráficos, etc.)
   const metricas = calcularMetricas(leadsFiltrados);
 
-  // IMPORTANTE: Métricas de META seguem o MÊS DO FILTRO (se houver) ou mês atual
-  // Detectar se há filtro de mês ativo (via FiltroMesAno)
-  const temFiltroMes = filtrosAtivos.dataInicio && filtrosAtivos.dataFim;
-
-  // Se há filtro de mês, usar o mês do filtro; senão, usar mês atual
-  const mesParaMetas = temFiltroMes
-    ? getInfoMesDaData(filtrosAtivos.dataInicio!)
+  // IMPORTANTE: Métricas de META devem respeitar TODOS os filtros ativos
+  // Se há qualquer filtro, usar leadsFiltrados; senão, usar mês atual
+  const mesParaMetas = temFiltrosAtivos()
+    ? (filtrosAtivos.dataInicio ? getInfoMesDaData(filtrosAtivos.dataInicio) : getMesAtualBrasilia())
     : getMesAtualBrasilia();
 
-  // Filtrar leads do mês correto (do filtro ou atual)
-  const leadsDoMesInteiro = filtrarLeadsPorMes(leadsOriginais, mesParaMetas.mes, mesParaMetas.ano);
-  const metricasParaMetas = calcularMetricas(leadsDoMesInteiro);
+  // ✅ Usar leadsFiltrados que já tem TODOS os filtros aplicados
+  // Isso garante consistência entre Cards e Acompanhamento de Metas
+  const metricasParaMetas = calcularMetricas(leadsFiltrados);
 
   // Calcular contribuição do período filtrado (se houver filtro de data/semana)
   const temFiltroTemporal = filtrosAtivos.dataInicio || filtrosAtivos.dataFim || filtrosAtivos.semana;
