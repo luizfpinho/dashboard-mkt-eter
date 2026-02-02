@@ -105,14 +105,18 @@ export async function POST(request: NextRequest) {
 
     console.log('Geração iniciada:', generationId);
 
-    // 2. Polling para aguardar conclusão (max 120 segundos para PDF, 90 para PPTX)
-    const maxAttempts = config.exportAs === 'pdf' ? 60 : 45;
+    // 2. Polling para aguardar conclusão (max 180s para PDF, 150s para PPTX)
+    // Aumentado para suportar apresentações complexas com AI images
+    const maxAttempts = config.exportAs === 'pdf' ? 90 : 75;
     const intervalMs = 2000;
 
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(resolve => setTimeout(resolve, intervalMs));
 
-      console.log(`Tentativa ${i + 1}/${maxAttempts} - verificando status...`);
+      // Log apenas a cada 10 tentativas para reduzir ruído
+      if (i % 10 === 0 || i === maxAttempts - 1) {
+        console.log(`Tentativa ${i + 1}/${maxAttempts} - verificando status...`);
+      }
 
       const statusResponse = await fetch(`${GAMMA_API_BASE}/generations/${generationId}`, {
         method: 'GET',
@@ -128,7 +132,11 @@ export async function POST(request: NextRequest) {
       }
 
       const statusData = await statusResponse.json();
-      console.log('Status:', statusData.status);
+
+      // Log apenas mudanças de status
+      if (i === 0 || statusData.status !== 'in_progress') {
+        console.log('Status:', statusData.status);
+      }
 
       if (statusData.status === 'completed') {
         console.log('Geração concluída com sucesso!');

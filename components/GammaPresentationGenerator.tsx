@@ -205,31 +205,49 @@ IMPORTANTE: Incluir em TODOS os slides relevantes a informação de quanto foi a
 
       setStatus('generating');
 
-      const response = await fetch('/api/generate-presentation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          config: {
-            ...config,
-            numCards: comparativoHabilitado ? Math.min(config.numCards + 3, 15) : config.numCards,
-          },
-        }),
-      });
+      // Timeout de 200s (3min 20s) no cliente - ligeiramente maior que servidor (180s)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 200000);
 
-      const data = await response.json();
-
-      if (data.success) {
-        setStatus('success');
-        setResult({
-          ...data,
-          isComparativo: comparativoHabilitado,
-          periodoAtual: periodoAtual.label,
-          periodoAnterior: periodoComparativo?.label,
+      try {
+        const response = await fetch('/api/generate-presentation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            config: {
+              ...config,
+              numCards: comparativoHabilitado ? Math.min(config.numCards + 3, 15) : config.numCards,
+            },
+          }),
+          signal: controller.signal,
         });
-      } else {
-        setStatus('error');
-        setResult({ error: data.error || 'Erro ao gerar apresentação' });
+
+        clearTimeout(timeoutId);
+
+        const data = await response.json();
+
+        if (data.success) {
+          setStatus('success');
+          setResult({
+            ...data,
+            isComparativo: comparativoHabilitado,
+            periodoAtual: periodoAtual.label,
+            periodoAnterior: periodoComparativo?.label,
+          });
+        } else {
+          setStatus('error');
+          setResult({ error: data.error || 'Erro ao gerar apresentação' });
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if ((error as any)?.name === 'AbortError') {
+          setStatus('error');
+          setResult({ error: 'Tempo limite excedido. A apresentação pode estar sendo gerada - verifique seu email do Gamma.' });
+        } else {
+          setStatus('error');
+          setResult({ error: 'Erro ao gerar apresentação' });
+        }
       }
     } catch (error) {
       setStatus('error');
@@ -359,7 +377,7 @@ IMPORTANTE: Incluir em TODOS os slides relevantes a informação de quanto foi a
                       <p className="text-sm text-muted-foreground mt-1">
                         {comparativoHabilitado
                           ? 'Apresentação comparativa em preparação'
-                          : 'Isso pode levar até 120 segundos'}
+                          : 'Isso pode levar até 3 minutos'}
                       </p>
                       <div className="mt-4 space-y-1 text-xs text-muted-foreground">
                         <p>📊 Tema: {config.themeId}</p>
