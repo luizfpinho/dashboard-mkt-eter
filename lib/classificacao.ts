@@ -1,4 +1,4 @@
-import { Lead, LeadClassificado } from '@/types/lead';
+import { Lead, LeadClassificado, Canal } from '@/types/lead';
 
 /**
  * Classifica um lead em Business Unit (BU) e ICP baseado no faturamento
@@ -58,7 +58,7 @@ export function classificarLead(lead: Lead): LeadClassificado {
 /**
  * Classifica a origem/canal do lead
  */
-export function classificarOrigem(utm: string): string {
+export function classificarOrigem(utm: string): Canal {
   // Proteção contra dados inválidos
   const utmLower = (utm || '').toLowerCase().trim();
 

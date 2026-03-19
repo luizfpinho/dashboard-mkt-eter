@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Metricas, Metas } from '@/types/lead';
@@ -10,7 +11,7 @@ interface TabelaMetasProps {
   metas?: Metas;
 }
 
-export function TabelaMetas({ metricas, metas }: TabelaMetasProps) {
+export const TabelaMetas = memo(function TabelaMetas({ metricas, metas }: TabelaMetasProps) {
   const metasPadrao: Metas = {
     consultoriaTotal: 20,
     aceleradoraTotal: 38,
@@ -165,4 +166,4 @@ export function TabelaMetas({ metricas, metas }: TabelaMetasProps) {
       </CardContent>
     </Card>
   );
-}
+});

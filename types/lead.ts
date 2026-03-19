@@ -1,3 +1,7 @@
+export type Bu = 'Consultoria' | 'Aceleradora' | 'Não Qualificado';
+export type Icp = 'ICP1' | 'ICP2' | 'ICP3';
+export type Canal = 'bio-eter' | 'fermento' | 'bio' | 'storys' | 'Tráfego Pago' | 'Não identificado';
+
 export interface Lead {
   nome: string;
   email: string;
@@ -11,9 +15,9 @@ export interface Lead {
 }
 
 export interface LeadClassificado extends Lead {
-  bu: 'Consultoria' | 'Aceleradora' | 'Não Qualificado';
-  icp: 'ICP1' | 'ICP2' | 'ICP3' | null;
-  canal: string;
+  bu: Bu;
+  icp: Icp | null;
+  canal: Canal;
 }
 
 export interface Filtros {

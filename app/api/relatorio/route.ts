@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import Papa from 'papaparse';
-import { Lead, LeadClassificado } from '@/types/lead';
+import { LeadClassificado, Metricas } from '@/types/lead';
 import { filtrarLeads, classificarLead, deduplicarLeads } from '@/lib/classificacao';
 import { calcularMetricas } from '@/lib/metricas';
+import { fetchLeads, SPREADSHEET_ID } from '@/lib/csvParser';
 
-const SPREADSHEET_ID = '1eiImA4miDAgoGpUcxo20EbRmWsuMldY4LbrKTEARACg';
-const GID = '996023627';
+interface MetricasRelatorio extends Metricas {
+  leadsUnicos: number;
+  duplicados: number;
+  mediaPorDia: number;
+  porBU: Record<string, number>;
+  porICP: Record<string, number>;
+  porOrigem: Record<string, number>;
+  porDia: { data: string; quantidade: number }[];
+}
 
 interface FiltrosRelatorio {
   dataInicio?: string;
@@ -23,81 +30,11 @@ export async function POST(request: NextRequest) {
     const filtros: FiltrosRelatorio = body.filtros || {};
     const formato = body.formato || 'markdown'; // 'markdown' ou 'json'
 
-    // Buscar dados da planilha
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID}`;
-    const response = await fetch(csvUrl, { cache: 'no-store' });
+    const leadsRaw = await fetchLeads();
 
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar planilha: ${response.statusText}`);
-    }
-
-    const csvText = await response.text();
-    const parseResult = Papa.parse<string[]>(csvText, { skipEmptyLines: true });
-    const rows = parseResult.data;
-
-    if (rows.length < 2) {
+    if (leadsRaw.length === 0) {
       return NextResponse.json({ error: 'Sem dados disponíveis' }, { status: 400 });
     }
-
-    const dataRows = rows.slice(1);
-
-    // Mapear para objetos Lead (mesma lógica do /api/leads)
-    const leadsRaw: Lead[] = dataRows
-      .map((row, index) => {
-        try {
-          let dataHoraStr = '';
-          let dataHoraIndex = -1;
-
-          if (row[10] && row[10].match(/^\d{4}-\d{2}-\d{2}T/)) {
-            dataHoraStr = row[10];
-            dataHoraIndex = 10;
-          } else if (row[9] && row[9].match(/^\d{4}-\d{2}-\d{2}T/)) {
-            dataHoraStr = row[9];
-            dataHoraIndex = 9;
-          } else if (row[8] && row[8].match(/^\d{4}-\d{2}-\d{2}T/)) {
-            dataHoraStr = row[8];
-            dataHoraIndex = 8;
-          }
-
-          let dataHora = new Date();
-
-          if (dataHoraStr) {
-            dataHora = new Date(dataHoraStr);
-            if (isNaN(dataHora.getTime())) {
-              dataHora = new Date();
-            }
-          }
-
-          let origem = '';
-          let investimentoMarketing = '';
-
-          if (dataHoraIndex === 10) {
-            investimentoMarketing = row[8] || '';
-            origem = row[9] || '';
-          } else if (dataHoraIndex === 9) {
-            investimentoMarketing = row[7] || '';
-            origem = row[8] || '';
-          } else if (dataHoraIndex === 8) {
-            investimentoMarketing = row[6] || '';
-            origem = row[7] || '';
-          }
-
-          return {
-            nome: row[0] || '',
-            email: row[1] || '',
-            telefone: row[2] || '',
-            faturamento: row[3] || '',
-            colaboradores: row[4] || '',
-            instagram: row[5] || '',
-            investimentoMarketing,
-            origem,
-            dataHora
-          };
-        } catch (error) {
-          return null;
-        }
-      })
-      .filter((lead): lead is Lead => lead !== null && lead.email !== '');
 
     // Classificar leads
     const leadsClassificados = leadsRaw.map(lead => classificarLead(lead));
@@ -192,7 +129,7 @@ export async function POST(request: NextRequest) {
 
 function gerarRelatorio(
   leads: LeadClassificado[],
-  metricas: any,
+  metricas: MetricasRelatorio,
   filtros: FiltrosRelatorio,
   formato: string
 ): string {
@@ -307,7 +244,7 @@ function gerarRelatorio(
   if (ultimosDias.length > 0) {
     md += '| Data | Quantidade |\n';
     md += '|------|------------|\n';
-    ultimosDias.forEach((item: any) => {
+    ultimosDias.forEach((item) => {
       md += `| ${item.data} | ${item.quantidade} |\n`;
     });
     md += '\n';

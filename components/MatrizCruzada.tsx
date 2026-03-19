@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -7,7 +8,7 @@ interface MatrizCruzadaProps {
   matriz: Record<string, Record<string, number>>;
 }
 
-export function MatrizCruzada({ matriz }: MatrizCruzadaProps) {
+export const MatrizCruzada = memo(function MatrizCruzada({ matriz }: MatrizCruzadaProps) {
   const origens = Object.keys(matriz).sort();
   const colunas = [
     'Consultoria-ICP1',
@@ -108,4 +109,4 @@ export function MatrizCruzada({ matriz }: MatrizCruzadaProps) {
       </CardContent>
     </Card>
   );
-}
+});

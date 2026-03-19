@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Target, Building2, GraduationCap, TrendingUp } from 'lucide-react';
 import { Metricas } from '@/types/lead';
@@ -8,7 +9,7 @@ interface CardsResumoProps {
   metricas: Metricas;
 }
 
-export function CardsResumo({ metricas }: CardsResumoProps) {
+export const CardsResumo = memo(function CardsResumo({ metricas }: CardsResumoProps) {
   const cards = [
     {
       titulo: 'Total de Leads',
@@ -69,4 +70,4 @@ export function CardsResumo({ metricas }: CardsResumoProps) {
       })}
     </div>
   );
-}
+});

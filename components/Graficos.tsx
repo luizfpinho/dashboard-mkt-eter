@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   LineChart,
@@ -16,7 +17,6 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { LeadClassificado } from '@/types/lead';
 
 interface GraficosProps {
   evolucao: { data: string; total: number; consultoria: number; aceleradora: number }[];
@@ -36,7 +36,7 @@ const CORES_ICP = ['#10b981', '#3b82f6', '#8b5cf6'];
 
 const CORES_CANAL = ['#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#6b7280'];
 
-export function Graficos({
+export const Graficos = memo(function Graficos({
   evolucao,
   distribuicaoBU,
   distribuicaoConsultoriaICP,
@@ -184,4 +184,4 @@ export function Graficos({
       </div>
     </div>
   );
-}
+});

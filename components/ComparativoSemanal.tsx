@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ComparativoSemanal as ComparativoSemanalType } from '@/types/lead';
@@ -9,7 +10,7 @@ interface ComparativoSemanalProps {
   comparativo: ComparativoSemanalType[];
 }
 
-export function ComparativoSemanal({ comparativo }: ComparativoSemanalProps) {
+export const ComparativoSemanal = memo(function ComparativoSemanal({ comparativo }: ComparativoSemanalProps) {
   const getVariacaoIcone = (percentual: number) => {
     if (percentual > 5) {
       return <TrendingUp className="w-5 h-5 text-green-600" />;
@@ -73,4 +74,4 @@ export function ComparativoSemanal({ comparativo }: ComparativoSemanalProps) {
       </CardContent>
     </Card>
   );
-}
+});

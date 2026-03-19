@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Metricas } from '@/types/lead';
@@ -8,7 +9,7 @@ interface TabelaConsolidadaProps {
   metricas: Metricas;
 }
 
-export function TabelaConsolidada({ metricas }: TabelaConsolidadaProps) {
+export const TabelaConsolidada = memo(function TabelaConsolidada({ metricas }: TabelaConsolidadaProps) {
   const taxaConsultoria =
     metricas.totalLeads > 0 ? ((metricas.consultoria / metricas.totalLeads) * 100).toFixed(2) : '0.00';
 
@@ -78,4 +79,4 @@ export function TabelaConsolidada({ metricas }: TabelaConsolidadaProps) {
       </CardContent>
     </Card>
   );
-}
+});

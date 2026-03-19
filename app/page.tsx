@@ -1,262 +1,80 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Lead, LeadClassificado, Filtros as FiltrosType, Metas } from '@/types/lead';
-import { classificarLead, deduplicarLeads, filtrarLeads, filtrarLeadsPorMes } from '@/lib/classificacao';
-import {
-  calcularMetricas,
-  calcularDistribuicaoPorCanal,
-  calcularMatrizCruzada,
-  calcularEvolucaoTemporal,
-  calcularComparativoSemanal,
-  obterLeadsDaSemana
-} from '@/lib/metricas';
+import { Metas } from '@/types/lead';
+import { useLeadsFetch } from '@/lib/hooks/useLeadsFetch';
+import { useMetrics } from '@/lib/hooks/useMetrics';
 
 import { Filtros } from '@/components/Filtros';
 import { FiltroMesAno } from '@/components/FiltroMesAno';
 import { CardsResumo } from '@/components/CardsResumo';
 import { TabelaMetas } from '@/components/TabelaMetas';
 import { TabelaConsolidada } from '@/components/TabelaConsolidada';
-import { Graficos } from '@/components/Graficos';
 import { MatrizCruzada } from '@/components/MatrizCruzada';
-import { TabelaLeads } from '@/components/TabelaLeads';
-import AcompanhamentoMetas from '@/components/AcompanhamentoMetas';
-import { getMesAtualBrasilia, getInfoMesDaData } from '@/lib/timezone';
 import { ComparativoSemanal } from '@/components/ComparativoSemanal';
-import GeradorRelatorio from '@/components/GeradorRelatorio';
-import GammaPresentationGenerator from '@/components/GammaPresentationGenerator';
+
+// Lazy loading de componentes pesados com next/dynamic
+const Graficos = dynamic(() => import('@/components/Graficos').then(mod => ({ default: mod.Graficos })), {
+  loading: () => <div className="animate-pulse bg-muted h-96 rounded-lg" />,
+});
+
+const TabelaLeads = dynamic(() => import('@/components/TabelaLeads').then(mod => ({ default: mod.TabelaLeads })), {
+  loading: () => <div className="animate-pulse bg-muted h-64 rounded-lg" />,
+});
+
+const AcompanhamentoMetas = dynamic(() => import('@/components/AcompanhamentoMetas'), {
+  loading: () => <div className="animate-pulse bg-muted h-48 rounded-lg" />,
+});
+
+const GeradorRelatorio = dynamic(() => import('@/components/GeradorRelatorio'), {
+  loading: () => <div className="animate-pulse bg-muted h-32 rounded-lg" />,
+});
+
+const GammaPresentationGenerator = dynamic(() => import('@/components/GammaPresentationGenerator'), {
+  loading: () => <div className="animate-pulse bg-muted h-32 rounded-lg" />,
+});
+
+const METAS: Metas = {
+  consultoriaTotal: 20,
+  aceleradoraTotal: 38,
+  total: 57
+};
 
 export default function Dashboard() {
-  const [leadsOriginais, setLeadsOriginais] = useState<LeadClassificado[]>([]);
-  const [leadsFiltrados, setLeadsFiltrados] = useState<LeadClassificado[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null);
-  const [filtrosAtivos, setFiltrosAtivos] = useState<FiltrosType>({
-    dataInicio: null,
-    dataFim: null,
-    origens: [],
-    bus: [],
-    icps: [],
-    semana: null
+  const {
+    leadsOriginais,
+    leadsFiltrados,
+    carregando,
+    ultimaAtualizacao,
+    filtrosAtivos,
+    temFiltrosAtivos,
+    buscarDados,
+    handleAplicarFiltros,
+    handleLimparFiltros,
+    handleFiltroMesAno,
+  } = useLeadsFetch();
+
+  const {
+    metricas,
+    mesParaMetas,
+    metricasFiltradas,
+    periodoFiltradoLabel,
+    evolucao,
+    distribuicaoBU,
+    distribuicaoConsultoriaICP,
+    distribuicaoAceleradoraICP,
+    distribuicaoCanal,
+    matrizCruzada,
+    comparativoSemanal,
+    dashboardDataForGamma,
+  } = useMetrics({
+    leadsFiltrados,
+    leadsOriginais,
+    filtrosAtivos,
+    temFiltrosAtivos,
   });
-
-  const metas: Metas = {
-    consultoriaTotal: 20,
-    aceleradoraTotal: 38,
-    total: 57
-  };
-
-  /**
-   * Verifica se há QUALQUER filtro ativo
-   * Inclui: data, semana, origem, BU, ICP
-   */
-  const temFiltrosAtivos = (): boolean => {
-    return !!(
-      filtrosAtivos.dataInicio ||
-      filtrosAtivos.dataFim ||
-      filtrosAtivos.semana ||
-      (filtrosAtivos.origens && filtrosAtivos.origens.length > 0) ||
-      (filtrosAtivos.bus && filtrosAtivos.bus.length > 0) ||
-      (filtrosAtivos.icps && filtrosAtivos.icps.length > 0)
-    );
-  };
-
-  // Buscar dados da planilha
-  const buscarDados = async () => {
-    setCarregando(true);
-    try {
-      const response = await fetch('/api/leads');
-      if (!response.ok) {
-        throw new Error('Erro ao buscar dados');
-      }
-
-      const leads: Lead[] = await response.json();
-
-      // Classificar todos os leads
-      const leadsClassificados = leads.map(lead => classificarLead(lead));
-
-      // Deduplicar
-      const leadsUnicos = deduplicarLeads(leadsClassificados);
-
-      setLeadsOriginais(leadsUnicos);
-
-      // IMPORTANTE: Reaplicar filtros existentes aos novos dados
-      // Se há filtros ativos, aplicá-los; senão, filtrar automaticamente pelo mês atual
-      if (temFiltrosAtivos()) {
-        // ✅ Reaplica TODOS os filtros ativos (incluindo semana)
-        const leadsFiltradosNovos = filtrarLeads(leadsUnicos, filtrosAtivos);
-        setLeadsFiltrados(leadsFiltradosNovos);
-        console.log('🔄 Dados atualizados - Filtros preservados');
-      } else {
-        // ✅ Só volta para mês atual se NÃO houver filtros
-        const mesAtual = getMesAtualBrasilia();
-        const leadsDoMesAtual = filtrarLeadsPorMes(leadsUnicos, mesAtual.mes, mesAtual.ano);
-        setLeadsFiltrados(leadsDoMesAtual);
-        console.log(`📅 Filtro automático: ${mesAtual.mes}/${mesAtual.ano} (${leadsDoMesAtual.length} leads)`);
-      }
-
-      setUltimaAtualizacao(new Date());
-    } catch (error) {
-      console.error('Erro ao buscar leads:', error);
-      alert('Erro ao carregar dados da planilha. Verifique a conexão.');
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  useEffect(() => {
-    buscarDados();
-
-    // Atualização automática a cada 5 minutos
-    const interval = setInterval(buscarDados, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleAplicarFiltros = (filtros: FiltrosType) => {
-    setFiltrosAtivos(filtros);
-    const resultados = filtrarLeads(leadsOriginais, filtros);
-    setLeadsFiltrados(resultados);
-  };
-
-  const handleLimparFiltros = () => {
-    setFiltrosAtivos({
-      dataInicio: null,
-      dataFim: null,
-      origens: [],
-      bus: [],
-      icps: [],
-      semana: null
-    });
-    // Ao limpar filtros, aplicar filtro automático do mês atual
-    const mesAtual = getMesAtualBrasilia();
-    const leadsDoMesAtual = filtrarLeadsPorMes(leadsOriginais, mesAtual.mes, mesAtual.ano);
-    setLeadsFiltrados(leadsDoMesAtual);
-    console.log(`📅 Filtros limpos - Aplicado filtro automático: ${mesAtual.mes}/${mesAtual.ano}`);
-  };
-
-  // Calcular métricas dos leads filtrados (para cards, gráficos, etc.)
-  const metricas = calcularMetricas(leadsFiltrados);
-
-  // IMPORTANTE: Métricas de META devem respeitar TODOS os filtros ativos
-  // Se há qualquer filtro, usar leadsFiltrados; senão, usar mês atual
-  const mesParaMetas = temFiltrosAtivos()
-    ? (filtrosAtivos.dataInicio ? getInfoMesDaData(filtrosAtivos.dataInicio) : getMesAtualBrasilia())
-    : getMesAtualBrasilia();
-
-  // ✅ Usar leadsFiltrados que já tem TODOS os filtros aplicados
-  // Isso garante consistência entre Cards e Acompanhamento de Metas
-  const metricasParaMetas = calcularMetricas(leadsFiltrados);
-
-  // Calcular contribuição do período filtrado (se houver filtro de data/semana)
-  const temFiltroTemporal = filtrosAtivos.dataInicio || filtrosAtivos.dataFim || filtrosAtivos.semana;
-  const metricasFiltradas = temFiltroTemporal ? metricas : null;
-
-  // Gerar label do período filtrado
-  const getPeriodoFiltradoLabel = (): string | null => {
-    if (!temFiltroTemporal) return null;
-
-    if (filtrosAtivos.semana) {
-      return `Semana ${filtrosAtivos.semana}`;
-    }
-
-    if (filtrosAtivos.dataInicio && filtrosAtivos.dataFim) {
-      const inicio = filtrosAtivos.dataInicio.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      const fim = filtrosAtivos.dataFim.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      return `${inicio} a ${fim}`;
-    }
-
-    return 'Período filtrado';
-  };
-
-  const periodoFiltradoLabel = getPeriodoFiltradoLabel();
-
-  // Preparar dados para gráficos
-  const evolucao = calcularEvolucaoTemporal(leadsFiltrados);
-
-  const distribuicaoBU = [
-    { name: 'Consultoria', value: metricas.consultoria },
-    { name: 'Aceleradora', value: metricas.aceleradora },
-    { name: 'Não Qualificado', value: metricas.naoQualificado }
-  ].filter(item => item.value > 0);
-
-  const distribuicaoConsultoriaICP = [
-    { name: 'ICP 1', value: metricas.consultoriaICP1 },
-    { name: 'ICP 2', value: metricas.consultoriaICP2 },
-    { name: 'ICP 3', value: metricas.consultoriaICP3 }
-  ];
-
-  const distribuicaoAceleradoraICP = [
-    { name: 'ICP 1', value: metricas.aceleradoraICP1 },
-    { name: 'ICP 2', value: metricas.aceleradoraICP2 },
-    { name: 'ICP 3', value: metricas.aceleradoraICP3 }
-  ];
-
-  const distribuicaoCanal = Object.entries(calcularDistribuicaoPorCanal(leadsFiltrados)).map(
-    ([name, value]) => ({ name, value })
-  );
-
-  const matrizCruzada = calcularMatrizCruzada(leadsFiltrados);
-
-  // Comparativo semanal (última semana vs penúltima)
-  const hoje = new Date();
-  const mesAtual = hoje.getMonth();
-  const anoAtual = hoje.getFullYear();
-  const semanaAtual = Math.ceil(hoje.getDate() / 7);
-  const semanaAnterior = semanaAtual - 1;
-
-  const leadsEstaSemana = obterLeadsDaSemana(leadsOriginais, semanaAtual, mesAtual, anoAtual);
-  const leadsSemanaPassada =
-    semanaAnterior > 0
-      ? obterLeadsDaSemana(leadsOriginais, semanaAnterior, mesAtual, anoAtual)
-      : [];
-
-  const comparativoSemanal =
-    leadsSemanaPassada.length > 0
-      ? calcularComparativoSemanal(leadsEstaSemana, leadsSemanaPassada)
-      : [];
-
-  // Preparar dados para Gamma Presentation Generator
-  const porCanal = calcularDistribuicaoPorCanal(leadsFiltrados);
-
-  const getPeriodoLabel = (): string => {
-    if (filtrosAtivos.dataInicio && filtrosAtivos.dataFim) {
-      const inicio = filtrosAtivos.dataInicio.toLocaleDateString('pt-BR');
-      const fim = filtrosAtivos.dataFim.toLocaleDateString('pt-BR');
-      return `${inicio} até ${fim}`;
-    }
-    return 'Todo o período disponível';
-  };
-
-  const dashboardDataForGamma = {
-    // Dados do período filtrado (para análise semanal, etc.)
-    totalLeads: leadsFiltrados.length,
-    totalMQLs: metricas.totalMQLs,
-    totalConsultoria: metricas.consultoria,
-    totalAceleradora: metricas.aceleradora,
-    totalNaoQualificado: metricas.naoQualificado,
-    taxaQualificacao: metricas.taxaQualificacao,
-    consultoriaICP1: metricas.consultoriaICP1,
-    consultoriaICP2: metricas.consultoriaICP2,
-    consultoriaICP3: metricas.consultoriaICP3,
-    aceleradoraICP1: metricas.aceleradoraICP1,
-    aceleradoraICP2: metricas.aceleradoraICP2,
-    aceleradoraICP3: metricas.aceleradoraICP3,
-    taxaConsultoria: leadsFiltrados.length > 0 ? (metricas.consultoria / leadsFiltrados.length) * 100 : 0,
-    taxaAceleradora: leadsFiltrados.length > 0 ? (metricas.aceleradora / leadsFiltrados.length) * 100 : 0,
-    porCanal,
-    periodoLabel: getPeriodoLabel(),
-    dataInicio: filtrosAtivos.dataInicio || new Date(0),
-    dataFim: filtrosAtivos.dataFim || new Date(),
-    // Dados do MÊS INTEIRO para cálculo de metas (independente de filtros)
-    metaMesInteiro: {
-      totalConsultoria: metricasParaMetas.consultoria,
-      totalAceleradora: metricasParaMetas.aceleradora,
-      totalMQLs: metricasParaMetas.totalMQLs,
-    },
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -307,21 +125,7 @@ export default function Dashboard() {
           <>
             {/* Filtro Mês/Ano */}
             <div className="mb-4">
-              <FiltroMesAno
-                onAplicar={(inicio, fim, label) => {
-                  setFiltrosAtivos({
-                    ...filtrosAtivos,
-                    dataInicio: inicio,
-                    dataFim: fim,
-                  });
-                  const resultados = filtrarLeads(leadsOriginais, {
-                    ...filtrosAtivos,
-                    dataInicio: inicio,
-                    dataFim: fim,
-                  });
-                  setLeadsFiltrados(resultados);
-                }}
-              />
+              <FiltroMesAno onAplicar={handleFiltroMesAno} />
             </div>
 
             {/* Separador "ou" */}
@@ -339,7 +143,7 @@ export default function Dashboard() {
 
             {/* Acompanhamento de Metas Mensais */}
             <AcompanhamentoMetas
-              metricas={metricasParaMetas}
+              metricas={metricas}
               mesAtual={mesParaMetas}
               metricasFiltradas={metricasFiltradas}
               periodoFiltrado={periodoFiltradoLabel}
@@ -349,7 +153,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               {/* Coluna Esquerda - Tabelas */}
               <div className="lg:col-span-1 space-y-6">
-                <TabelaMetas metricas={metricas} metas={metas} />
+                <TabelaMetas metricas={metricas} metas={METAS} />
                 <TabelaConsolidada metricas={metricas} />
               </div>
 
