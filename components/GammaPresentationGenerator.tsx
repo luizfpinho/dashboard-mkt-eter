@@ -241,7 +241,7 @@ IMPORTANTE: Incluir em TODOS os slides relevantes a informação de quanto foi a
         }
       } catch (error) {
         clearTimeout(timeoutId);
-        if ((error as any)?.name === 'AbortError') {
+        if (error instanceof DOMException && error.name === 'AbortError') {
           setStatus('error');
           setResult({ error: 'Tempo limite excedido. A apresentação pode estar sendo gerada - verifique seu email do Gamma.' });
         } else {
@@ -274,7 +274,7 @@ IMPORTANTE: Incluir em TODOS os slides relevantes a informação de quanto foi a
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'config' | 'comparativo' | 'preview')}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="config" className="gap-2">
                 <Settings className="h-4 w-4" />

@@ -1,4 +1,5 @@
 import { LeadClassificado, Metricas, ComparativoSemanal } from '@/types/lead';
+import { converterParaBrasilia } from '@/lib/timezone';
 
 /**
  * Calcula todas as métricas a partir dos leads classificados
@@ -6,40 +7,35 @@ import { LeadClassificado, Metricas, ComparativoSemanal } from '@/types/lead';
 export function calcularMetricas(leads: LeadClassificado[]): Metricas {
   const totalLeads = leads.length;
 
-  const consultoria = leads.filter(l => l.bu === 'Consultoria').length;
-  const aceleradora = leads.filter(l => l.bu === 'Aceleradora').length;
-  const naoQualificado = leads.filter(l => l.bu === 'Não Qualificado').length;
+  // Single pass: calcula todas as contagens de uma vez
+  let consultoria = 0;
+  let aceleradora = 0;
+  let naoQualificado = 0;
+  let consultoriaICP1 = 0;
+  let consultoriaICP2 = 0;
+  let consultoriaICP3 = 0;
+  let aceleradoraICP1 = 0;
+  let aceleradoraICP2 = 0;
+  let aceleradoraICP3 = 0;
+
+  for (const lead of leads) {
+    if (lead.bu === 'Consultoria') {
+      consultoria++;
+      if (lead.icp === 'ICP1') consultoriaICP1++;
+      else if (lead.icp === 'ICP2') consultoriaICP2++;
+      else if (lead.icp === 'ICP3') consultoriaICP3++;
+    } else if (lead.bu === 'Aceleradora') {
+      aceleradora++;
+      if (lead.icp === 'ICP1') aceleradoraICP1++;
+      else if (lead.icp === 'ICP2') aceleradoraICP2++;
+      else if (lead.icp === 'ICP3') aceleradoraICP3++;
+    } else {
+      naoQualificado++;
+    }
+  }
 
   const totalMQLs = consultoria + aceleradora;
-
-  // Taxa de qualificação com 2 casas decimais para consistência
   const taxaQualificacao = totalLeads > 0 ? Number(((totalMQLs / totalLeads) * 100).toFixed(2)) : 0;
-
-  // Validação de integridade: soma das BUs deve ser igual ao total
-  const somaTotal = consultoria + aceleradora + naoQualificado;
-  if (somaTotal !== totalLeads) {
-    console.error(`❌ ERRO DE INTEGRIDADE: Soma BUs (${somaTotal}) ≠ Total Leads (${totalLeads})`);
-  }
-
-  // Métricas por ICP - Consultoria
-  const consultoriaICP1 = leads.filter(l => l.bu === 'Consultoria' && l.icp === 'ICP1').length;
-  const consultoriaICP2 = leads.filter(l => l.bu === 'Consultoria' && l.icp === 'ICP2').length;
-  const consultoriaICP3 = leads.filter(l => l.bu === 'Consultoria' && l.icp === 'ICP3').length;
-
-  // Validação: soma dos ICPs de Consultoria deve ser igual ao total de Consultoria
-  if (consultoriaICP1 + consultoriaICP2 + consultoriaICP3 !== consultoria) {
-    console.error(`❌ ERRO: Soma ICPs Consultoria ≠ Total Consultoria`);
-  }
-
-  // Métricas por ICP - Aceleradora
-  const aceleradoraICP1 = leads.filter(l => l.bu === 'Aceleradora' && l.icp === 'ICP1').length;
-  const aceleradoraICP2 = leads.filter(l => l.bu === 'Aceleradora' && l.icp === 'ICP2').length;
-  const aceleradoraICP3 = leads.filter(l => l.bu === 'Aceleradora' && l.icp === 'ICP3').length;
-
-  // Validação: soma dos ICPs de Aceleradora deve ser igual ao total de Aceleradora
-  if (aceleradoraICP1 + aceleradoraICP2 + aceleradoraICP3 !== aceleradora) {
-    console.error(`❌ ERRO: Soma ICPs Aceleradora ≠ Total Aceleradora`);
-  }
 
   return {
     totalLeads,
@@ -106,9 +102,13 @@ export function calcularEvolucaoTemporal(leads: LeadClassificado[]): {
   const evolucao: Record<string, { total: number; consultoria: number; aceleradora: number }> = {};
 
   leads.forEach(lead => {
-    // Garantir que dataHora seja um objeto Date
+    // Garantir que dataHora seja um objeto Date e converter para Brasília
     const data = lead.dataHora instanceof Date ? lead.dataHora : new Date(lead.dataHora);
-    const dataStr = data.toISOString().split('T')[0];
+    const dataBrasilia = converterParaBrasilia(data);
+    const ano = dataBrasilia.getFullYear();
+    const mes = String(dataBrasilia.getMonth() + 1).padStart(2, '0');
+    const dia = String(dataBrasilia.getDate()).padStart(2, '0');
+    const dataStr = `${ano}-${mes}-${dia}`;
 
     if (!evolucao[dataStr]) {
       evolucao[dataStr] = { total: 0, consultoria: 0, aceleradora: 0 };
@@ -174,11 +174,12 @@ export function calcularComparativoSemanal(
  */
 export function obterLeadsDaSemana(leads: LeadClassificado[], semana: number, mes: number, ano: number): LeadClassificado[] {
   return leads.filter(lead => {
-    // Garantir que dataHora seja um objeto Date
+    // Garantir que dataHora seja um objeto Date e converter para Brasília
     const data = lead.dataHora instanceof Date ? lead.dataHora : new Date(lead.dataHora);
-    if (data.getMonth() !== mes || data.getFullYear() !== ano) return false;
+    const dataBrasilia = converterParaBrasilia(data);
+    if (dataBrasilia.getMonth() !== mes || dataBrasilia.getFullYear() !== ano) return false;
 
-    const dia = data.getDate();
+    const dia = dataBrasilia.getDate();
 
     if (semana === 1) return dia >= 1 && dia <= 7;
     if (semana === 2) return dia >= 8 && dia <= 14;

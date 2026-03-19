@@ -143,10 +143,10 @@ export function useMetrics({
   );
 
   const comparativoSemanal = useMemo(() => {
-    const hoje = new Date();
-    const mesAtual = hoje.getMonth();
-    const anoAtual = hoje.getFullYear();
-    const semanaAtual = Math.ceil(hoje.getDate() / 7);
+    const mesInfo = getMesAtualBrasilia();
+    const mesAtual = mesInfo.mes - 1; // getMonth() retorna 0-11, getMesAtualBrasilia retorna 1-12
+    const anoAtual = mesInfo.ano;
+    const semanaAtual = Math.ceil(mesInfo.diaAtual / 7);
     const semanaAnterior = semanaAtual - 1;
 
     const leadsEstaSemana = obterLeadsDaSemana(leadsOriginais, semanaAtual, mesAtual, anoAtual);

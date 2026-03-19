@@ -13,31 +13,36 @@ export function processarLeadsPorPeriodo(
     return data >= inicio && data <= fim;
   });
 
-  // Calcular métricas
+  // Calcular métricas em single pass
   const totalLeads = leadsPeriodo.length;
 
-  // Separar por Business Unit
-  const leadsConsultoria = leadsPeriodo.filter(l => l.bu === 'Consultoria');
-  const leadsAceleradora = leadsPeriodo.filter(l => l.bu === 'Aceleradora');
-  const leadsNaoQualificado = leadsPeriodo.filter(l => l.bu === 'Não Qualificado');
+  let totalConsultoria = 0;
+  let totalAceleradora = 0;
+  let totalNaoQualificado = 0;
+  let consultoriaICP1 = 0;
+  let consultoriaICP2 = 0;
+  let consultoriaICP3 = 0;
+  let aceleradoraICP1 = 0;
+  let aceleradoraICP2 = 0;
+  let aceleradoraICP3 = 0;
 
-  // Calcular ICPs de Consultoria
-  const consultoriaICP1 = leadsConsultoria.filter(l => l.icp === 'ICP1').length;
-  const consultoriaICP2 = leadsConsultoria.filter(l => l.icp === 'ICP2').length;
-  const consultoriaICP3 = leadsConsultoria.filter(l => l.icp === 'ICP3').length;
+  for (const lead of leadsPeriodo) {
+    if (lead.bu === 'Consultoria') {
+      totalConsultoria++;
+      if (lead.icp === 'ICP1') consultoriaICP1++;
+      else if (lead.icp === 'ICP2') consultoriaICP2++;
+      else if (lead.icp === 'ICP3') consultoriaICP3++;
+    } else if (lead.bu === 'Aceleradora') {
+      totalAceleradora++;
+      if (lead.icp === 'ICP1') aceleradoraICP1++;
+      else if (lead.icp === 'ICP2') aceleradoraICP2++;
+      else if (lead.icp === 'ICP3') aceleradoraICP3++;
+    } else {
+      totalNaoQualificado++;
+    }
+  }
 
-  // Calcular ICPs de Aceleradora
-  const aceleradoraICP1 = leadsAceleradora.filter(l => l.icp === 'ICP1').length;
-  const aceleradoraICP2 = leadsAceleradora.filter(l => l.icp === 'ICP2').length;
-  const aceleradoraICP3 = leadsAceleradora.filter(l => l.icp === 'ICP3').length;
-
-  // Totais
-  const totalConsultoria = leadsConsultoria.length;
-  const totalAceleradora = leadsAceleradora.length;
-  const totalNaoQualificado = leadsNaoQualificado.length;
   const totalMQLs = totalConsultoria + totalAceleradora;
-
-  // Taxa de qualificação
   const taxaQualificacao = totalLeads > 0 ? (totalMQLs / totalLeads) * 100 : 0;
 
   // Agrupar por canal
@@ -45,7 +50,7 @@ export function processarLeadsPorPeriodo(
   leadsPeriodo.forEach(lead => {
     // Considerar apenas MQLs para canais
     if (lead.bu !== 'Não Qualificado') {
-      const canal = lead.origem || 'Desconhecido';
+      const canal = lead.canal || 'Não identificado';
       porCanal[canal] = (porCanal[canal] || 0) + 1;
     }
   });

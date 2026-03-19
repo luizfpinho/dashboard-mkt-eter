@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const GAMMA_API_KEY = process.env.GAMMA_API_KEY || 'sk-gamma-YKQypboIARKmLjP5kynYW30xmeuLdVdO8TuNfi4SkvY';
+const GAMMA_API_KEY = process.env.GAMMA_API_KEY ?? '';
 const GAMMA_API_BASE = 'https://public-api.gamma.app/v1.0';
 
 interface GammaRequestBody {
@@ -38,8 +38,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!GAMMA_API_KEY) {
+      return NextResponse.json(
+        { error: 'GAMMA_API_KEY não configurada no servidor' },
+        { status: 500 }
+      );
+    }
+
     // Construir payload completo para o Gamma
-    const gammaPayload: any = {
+    const gammaPayload: Record<string, unknown> = {
       inputText: prompt,
       textMode: config.textMode || 'generate',
       format: config.format || 'presentation',
@@ -69,8 +76,9 @@ export async function POST(request: NextRequest) {
 
     // Adicionar opções de imagem apenas se for AI Generated
     if (config.imageSource === 'aiGenerated') {
-      gammaPayload.imageOptions.model = config.imageModel || 'imagen-4-pro';
-      gammaPayload.imageOptions.style = config.imageStyle || 'corporate';
+      const imgOpts = gammaPayload.imageOptions as Record<string, unknown>;
+      imgOpts.model = config.imageModel || 'imagen-4-pro';
+      imgOpts.style = config.imageStyle || 'corporate';
     }
 
     console.log('Enviando para Gamma:', JSON.stringify(gammaPayload, null, 2));

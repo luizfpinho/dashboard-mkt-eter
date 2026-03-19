@@ -1,4 +1,5 @@
 import { DadosComparativos, formatarVariacao } from './comparativo';
+import { METAS_MENSAIS } from './metas';
 
 export function gerarPromptComparativo(dados: DadosComparativos): string {
   const { atual, anterior, variacoes } = dados;
@@ -41,9 +42,9 @@ export function gerarPromptComparativo(dados: DadosComparativos): string {
     pontosAtencao.push(`Taxa de qualificação crítica: ${atual.taxaQualificacao.toFixed(1)}%`);
   }
 
-  // Calcular atingimento de metas (metas mensais)
-  const metaConsultoria = 100;
-  const metaAceleradora = 200;
+  // Calcular atingimento de metas (metas mensais) - usar valores de METAS_MENSAIS
+  const metaConsultoria = METAS_MENSAIS.find(m => m.bu === 'Consultoria')?.metaBase ?? 100;
+  const metaAceleradora = METAS_MENSAIS.find(m => m.bu === 'Aceleradora')?.metaBase ?? 200;
   const percConsultoriaAtual = ((atual.totalConsultoria / metaConsultoria) * 100).toFixed(1);
   const percAceleradoraAtual = ((atual.totalAceleradora / metaAceleradora) * 100).toFixed(1);
   const percConsultoriaAnterior = ((anterior.totalConsultoria / metaConsultoria) * 100).toFixed(1);

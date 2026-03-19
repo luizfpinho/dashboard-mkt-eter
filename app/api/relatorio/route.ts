@@ -288,5 +288,5 @@ function gerarRelatorio(
 
 function parseFaturamento(faturamento: string): number {
   const limpo = faturamento.toLowerCase().replace(/[^\d]/g, '');
-  return parseInt(limpo) || 0;
+  return parseInt(limpo, 10) || 0;
 }

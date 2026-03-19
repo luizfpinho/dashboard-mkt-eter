@@ -24,7 +24,9 @@ export function TabelaLeads({ leads }: TabelaLeadsProps) {
   const itensPorPagina = 20;
 
   // Filtrar por busca
+  // Reset paginação quando leads ou busca mudam
   const leadsFiltrados = useMemo(() => {
+    setPaginaAtual(1);
     if (!busca) return leads;
 
     const buscaLower = busca.toLowerCase();
@@ -82,7 +84,13 @@ export function TabelaLeads({ leads }: TabelaLeadsProps) {
       format(lead.dataHora, 'dd/MM/yyyy HH:mm')
     ]);
 
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const escapeCsvField = (field: string): string => {
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return field;
+    };
+    const csvContent = [headers, ...rows].map(row => row.map(escapeCsvField).join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

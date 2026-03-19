@@ -91,12 +91,13 @@ export function deduplicarLeads(leads: LeadClassificado[]): LeadClassificado[] {
   let duplicatasRemovidas = 0;
 
   // Processar em ordem reversa para manter o lead mais recente
+  const temp: LeadClassificado[] = [];
   for (let i = leads.length - 1; i >= 0; i--) {
     const lead = leads[i];
 
     // Validar que o lead tem email
     if (!lead.email || lead.email.trim() === '') {
-      console.warn('Lead sem email encontrado:', lead.nome);
+      console.warn('Lead sem email encontrado:', lead.nome || '(sem nome)');
       continue;
     }
 
@@ -104,7 +105,7 @@ export function deduplicarLeads(leads: LeadClassificado[]): LeadClassificado[] {
 
     if (!emailsVistos.has(emailNormalizado)) {
       emailsVistos.add(emailNormalizado);
-      leadsUnicos.unshift(lead);
+      temp.push(lead);
     } else {
       duplicatasRemovidas++;
       if (process.env.NODE_ENV === 'development') {
@@ -113,8 +114,13 @@ export function deduplicarLeads(leads: LeadClassificado[]): LeadClassificado[] {
     }
   }
 
+  // Reverter para manter ordem cronológica original
+  for (let i = temp.length - 1; i >= 0; i--) {
+    leadsUnicos.push(temp[i]);
+  }
+
   if (duplicatasRemovidas > 0) {
-    console.log(`📊 Deduplicação: ${leads.length} leads → ${leadsUnicos.length} únicos (${duplicatasRemovidas} duplicatas removidas)`);
+    console.log(`Deduplicação: ${leads.length} leads → ${leadsUnicos.length} únicos (${duplicatasRemovidas} duplicatas removidas)`);
   }
 
   return leadsUnicos;
