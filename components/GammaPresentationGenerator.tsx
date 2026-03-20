@@ -249,7 +249,7 @@ IMPORTANTE: Incluir em TODOS os slides relevantes a informação de quanto foi a
           setResult({ error: 'Erro ao gerar apresentação' });
         }
       }
-    } catch (error) {
+    } catch {
       setStatus('error');
       setResult({ error: 'Erro ao gerar apresentação' });
     }
@@ -361,7 +361,7 @@ IMPORTANTE: Incluir em TODOS os slides relevantes a informação de quanto foi a
                 {status === 'idle' && (
                   <div className="text-center text-muted-foreground">
                     <Presentation className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Configure as opções e clique em "Gerar"</p>
+                    <p>Configure as opções e clique em &ldquo;Gerar&rdquo;</p>
                   </div>
                 )}
 

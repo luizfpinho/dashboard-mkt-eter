@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LeadClassificado } from '@/types/lead';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
 
 interface TabelaLeadsProps {
@@ -23,10 +23,13 @@ export function TabelaLeads({ leads }: TabelaLeadsProps) {
 
   const itensPorPagina = 20;
 
-  // Filtrar por busca
   // Reset paginação quando leads ou busca mudam
-  const leadsFiltrados = useMemo(() => {
+  useEffect(() => {
     setPaginaAtual(1);
+  }, [leads, busca]);
+
+  // Filtrar por busca
+  const leadsFiltrados = useMemo(() => {
     if (!busca) return leads;
 
     const buscaLower = busca.toLowerCase();
